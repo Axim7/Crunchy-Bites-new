@@ -1,0 +1,131 @@
+import { useState } from "react";
+
+export default function CrunchyBites() {
+  const [cart, setCart] = useState([]);
+  const [checkout, setCheckout] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState("Easypaisa");
+  const [orderPlaced, setOrderPlaced] = useState(false);
+
+  const products = [
+    { id: 1, name: "Masala Nimco Mix", price: 5, image: "https://via.placeholder.com/200" },
+    { id: 2, name: "Roasted Cashews", price: 8, image: "https://via.placeholder.com/200" },
+    { id: 3, name: "Salted Peanuts", price: 4, image: "https://via.placeholder.com/200" },
+    { id: 4, name: "Dry Fruit Mix", price: 10, image: "https://via.placeholder.com/200" },
+  ];
+
+  const addToCart = (product) => setCart([...cart, product]);
+  const removeFromCart = (id) => setCart(cart.filter((item, index) => index !== id));
+  const total = cart.reduce((sum, item) => sum + item.price, 0);
+
+  const handlePlaceOrder = async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const name = form.name.value;
+    const phone = form.phone.value;
+    const address = form.address.value;
+
+    try {
+      await fetch('/api/order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, phone, address, paymentMethod, cart, total }),
+      });
+      setOrderPlaced(true);
+      setCart([]);
+      setCheckout(false);
+    } catch (err) {
+      alert('Error sending order');
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-amber-50 text-gray-900">
+      <header className="bg-amber-700 text-white p-6 shadow-md flex justify-between items-center">
+        <h1 className="text-2xl font-bold">The Crunchy Bites</h1>
+        <nav className="space-x-6">
+          <a href="#" className="hover:underline">Home</a>
+          <a href="#shop" className="hover:underline">Shop</a>
+          <a href="#about" className="hover:underline">About</a>
+          <a href="#contact" className="hover:underline">Contact</a>
+          <a href="#cart" className="hover:underline">Cart ({cart.length})</a>
+        </nav>
+      </header>
+
+      <section className="text-center py-16 bg-gradient-to-r from-amber-100 to-yellow-200">
+        <h2 className="text-4xl font-extrabold mb-4">Delicious Nimco & Nuts at Your Doorstep</h2>
+        <p className="text-lg mb-6">Fresh, crunchy, and full of flavor – order now!</p>
+        <a href="#shop"><button className="bg-amber-700 text-white px-6 py-3 rounded-2xl shadow-md hover:bg-amber-800 transition">Shop Now</button></a>
+      </section>
+
+      <section id="shop" className="p-10 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
+        {products.map((product) => (
+          <div key={product.id} className="bg-white rounded-2xl shadow-lg overflow-hidden hover:scale-105 transition">
+            <img src={product.image} alt={product.name} className="w-full h-48 object-cover" />
+            <div className="p-4 text-center">
+              <h3 className="text-lg font-semibold mb-2">{product.name}</h3>
+              <p className="text-amber-700 font-bold mb-4">${product.price}</p>
+              <button onClick={() => addToCart(product)} className="bg-amber-600 text-white px-4 py-2 rounded-xl hover:bg-amber-700 transition">Add to Cart</button>
+            </div>
+          </div>
+        ))}
+      </section>
+
+      <section id="cart" className="bg-amber-100 py-16 px-6">
+        <h2 className="text-3xl font-bold mb-6 text-center">Your Cart</h2>
+
+        {orderPlaced ? (
+          <div className="text-center bg-green-100 p-8 rounded-2xl shadow max-w-xl mx-auto">
+            <h3 className="text-2xl font-bold text-green-700 mb-4">🎉 Thank you!</h3>
+            <p className="text-lg">Your order has been placed successfully. You will receive an email confirmation soon.</p>
+          </div>
+        ) : cart.length === 0 ? (
+          <p className="text-center text-lg">Your cart is empty.</p>
+        ) : (
+          <div className="max-w-2xl mx-auto">
+            {cart.map((item, index) => (
+              <div key={index} className="flex justify-between items-center bg-white rounded-xl p-4 mb-3 shadow">
+                <span>{item.name} - ${item.price}</span>
+                <button onClick={() => removeFromCart(index)} className="text-red-600 hover:underline">Remove</button>
+              </div>
+            ))}
+            <div className="text-right font-bold text-xl mt-4">Total: ${total}</div>
+
+            {!checkout ? (
+              <button onClick={() => setCheckout(true)} className="bg-green-600 text-white px-6 py-3 rounded-2xl shadow-md hover:bg-green-700 transition mt-6 w-full">Proceed to Checkout</button>
+            ) : (
+              <div className="mt-6 bg-white p-6 rounded-2xl shadow">
+                <h3 className="text-xl font-bold mb-4">Checkout (Demo)</h3>
+                <form className="space-y-4" onSubmit={handlePlaceOrder}>
+                  <input name="name" type="text" placeholder="Full Name" className="w-full p-3 border rounded-xl" required />
+                  <input name="phone" type="text" placeholder="Phone Number" className="w-full p-3 border rounded-xl" required />
+                  <input name="address" type="text" placeholder="Address" className="w-full p-3 border rounded-xl" required />
+
+                  <div>
+                    <label className="block font-semibold mb-2">Payment Method</label>
+                    <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} className="w-full p-3 border rounded-xl">
+                      <option>Easypaisa</option>
+                      <option>JazzCash</option>
+                      <option>Visa / MasterCard</option>
+                    </select>
+                  </div>
+
+                  <button type="submit" className="bg-amber-700 text-white px-6 py-3 rounded-2xl shadow-md hover:bg-amber-800 transition w-full">Pay Now (Demo)</button>
+                </form>
+              </div>
+            )}
+          </div>
+        )}
+      </section>
+
+      <section id="about" className="bg-amber-50 py-16 text-center px-6">
+        <h2 className="text-3xl font-bold mb-4">About Us</h2>
+        <p className="max-w-2xl mx-auto text-lg">At <strong>The Crunchy Bites</strong>, we believe snacking should be tasty, healthy, and full of joy. We source the finest ingredients to bring you the most delicious nimco and dry fruits.</p>
+      </section>
+
+      <footer id="contact" className="bg-amber-700 text-white py-6 text-center mt-10">
+        <p>&copy; 2025 The Crunchy Bites. All rights reserved.</p>
+        <p className="mt-2">Contact us: support@crunchybites.com</p>
+      </footer>
+    </div>
+  );
+}
